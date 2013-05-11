@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ZeLok</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <color name="background_color">#5F5F7F</color>
+    <string name="setup_button_description">Click to setup</string>
+    <string name="setup_textfield_description">Enter ZeLok phone number</string>
+    <string name="setup_confirm_button">Send</string>
+    <string name="service_name">Zelok Listener</string>
+    <color name="edit_text_color">#EFEFEF</color>
+    <string name="setup_textfield_default">Enter Zelok Number</string>
+    <string name="setup_longwait">Waiting for ZeLok to respond.\nYou may close the app. </string>
+
+</resources>
