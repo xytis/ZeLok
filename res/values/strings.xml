@@ -12,5 +12,8 @@
     <color name="edit_text_color">#EFEFEF</color>
     <string name="setup_textfield_default">Enter Zelok Number</string>
     <string name="setup_longwait">Waiting for ZeLok to respond.\nYou may close the app. </string>
+    <string name="notification_setup_finished_short">ZeLok responded!</string>
+    <string name="notification_setup_finished_title">Press to continue</string>
+    <string name="notification_setup_finished_content"/>
 
 </resources>

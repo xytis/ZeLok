@@ -17,7 +17,7 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:contentDescription="@string/setup_button_description"
-        android:onClick="onSetup"
+        android:onClick="onEnter"
         android:src="@drawable/ic_launcher" />
 
 </RelativeLayout>
