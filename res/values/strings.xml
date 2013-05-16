@@ -6,7 +6,6 @@
     <string name="hello_world">Hello world!</string>
     <color name="background_color">#5F5F7F</color>
     <string name="setup_button_description">Click to setup</string>
-    <string name="setup_textfield_description">Enter ZeLok phone number</string>
     <string name="setup_confirm_button">Send</string>
     <string name="service_name">Zelok Listener</string>
     <color name="edit_text_color">#EFEFEF</color>
@@ -15,5 +14,9 @@
     <string name="notification_setup_finished_short">ZeLok responded!</string>
     <string name="notification_setup_finished_title">Press to continue</string>
     <string name="notification_setup_finished_content"/>
+    <string name="setup_completed">You may use your device.</string>
+    <string name="test_setup_button_description">Test your settings</string>
+    <string name="test_setup_button_name">Test Me</string>
+    <string name="retry">Retry</string>
 
 </resources>
