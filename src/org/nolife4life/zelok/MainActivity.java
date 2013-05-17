@@ -35,22 +35,25 @@ public class MainActivity extends Activity {
 
 		setContentView(R.layout.activity_main);
 
-		//Get current applcation state.
-
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		int applicationState = settings.getInt("state", 0);
-
-		switch (applicationState) {
+		setViewByState(getState());		
+	}
+	
+	private void setViewByState(int state) {
+		switch (state) {
 		case Constants.FRESH_START: {
 			//Launch introduction slides.
 			enterIntroductionState();	    	
 			break;
 		}	    
+		case Constants.INTRODUCTION_STATE: {
+			enterIntroductionState();
+			break;
+		}
 		case Constants.SETUP_START: {
 			enterSetupState();
 			break;
 		}
-		case Constants.SETUP_PHONE_SET: {
+		case Constants.SETUP_PHONE_ENTERED: {
 			//Check if Intent returned a message. If not -- display error message.
 			Bundle bundle = getIntent().getExtras();
 			if (bundle != null) {
@@ -61,10 +64,23 @@ public class MainActivity extends Activity {
 			}
 			break;
 		}
-		//		case Constants.SETUP_CONFIRMATION_RECEIVED: {
-		//			setContentView(R.layout.activity_test);
-		//			break;
-		//		}
+		case Constants.SETUP_PHONE_CONFIRMED: {
+			enterTestState();
+			break;
+		}
+		case Constants.SETUP_TEST_STARTED: {
+			Bundle bundle = getIntent().getExtras();
+			if (bundle != null) {
+				//Check for message:
+				parseMessageAndEnterState(bundle.getString("Message"));
+			} else {
+				setContentView(R.layout.setup_wait_for_response);
+			}
+			break;
+		}
+		case Constants.SETUP_TEST_COMPLETED: {
+			enterCongratulationsState();
+		}
 		default: {
 			//Check if Intent returned a message. If not -- ?
 			Bundle bundle = getIntent().getExtras();
@@ -78,13 +94,53 @@ public class MainActivity extends Activity {
 		}		
 	}
 
-	private void enterIntroductionState() {
+	private int getState() {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
+		return settings.getInt("state", 0);		
+	}
+	
+	private void setState(int state) {
 		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
 		SharedPreferences.Editor editor = settings.edit();
 
+		editor.putInt("last_state", settings.getInt("state", 0));
 		editor.putInt("state", Constants.INTRODUCTION_STATE);
-		setContentView(R.layout.introduction_hello);
-		editor.commit();	    
+		editor.commit();
+	}
+	
+	private void setUserPhoneNumber(String number) {
+		number = TrackerMessage.FormatPhoneNumber(number);
+
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);    	
+		SharedPreferences.Editor editor = settings.edit();
+
+		editor.putString("user_phone_number", number);
+		editor.commit();
+	}
+	
+	private String getUserPhoneNumber() {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);   
+		return settings.getString("user_phone_number", "");
+	}
+	
+	private void setDevicePhoneNumber(String number) {
+		number = TrackerMessage.FormatPhoneNumber(number);
+
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);    	
+		SharedPreferences.Editor editor = settings.edit();
+
+		editor.putString("device_phone_number", number);
+		editor.commit();
+	}
+	
+	private String getDevicePhoneNumber() {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);   
+		return settings.getString("device_phone_number", "");
+	}
+	
+	private void enterIntroductionState() {
+		setState(Constants.INTRODUCTION_STATE);
+		setContentView(R.layout.introduction_hello);   
 	}
 
 	public void clickedIntroductionSlide(View view) {
@@ -93,14 +149,16 @@ public class MainActivity extends Activity {
 	}
 
 	private void enterSetupState() {
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		SharedPreferences.Editor editor = settings.edit();
-
-		editor.putInt("state", Constants.SETUP_START);
+		setState(Constants.SETUP_START);
 		//Try to get any saved device number:
+		String number = getDevicePhoneNumber();
+		if (number.length() > 0) {
+			//Place this number instead of hint.
+			EditText phoneField = (EditText) findViewById(R.id.editSetupPhone);
+			phoneField.setText(number);
+		}
 		
 		setContentView(R.layout.setup_enter_phone_step);
-		editor.commit();
 	}
 
 	//Hides retry button.
@@ -118,57 +176,82 @@ public class MainActivity extends Activity {
 	private void hideRetryButton() {
 		findViewById(R.id.retry_button).setVisibility(View.GONE);
 	}
+	
+	public void retryLastAction(View view) {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
+		SharedPreferences.Editor editor = settings.edit();
 
-	public void setupPhoneNumberEntered(View view) {
-		EditText setupPhoneNumber = (EditText) findViewById(R.id.editSetupPhone);
+		int state = settings.getInt("last_state", 0);
+		
+		editor.putInt("state", state);
+		editor.commit();
+		
+		//Launch state
+		setViewByState(state);
+	}
+
+	public void clickedDevicePhoneEntered(View view) {
+		EditText phoneField = (EditText) findViewById(R.id.editSetupPhone);
 		//Check for valid phone number:
-		if (!enteredValidPhoneNumber(setupPhoneNumber)) {
+		if (!enteredValidPhoneNumber(phoneField)) {
 			Toast.makeText(this, "Please enter a valid number",
 					Toast.LENGTH_LONG).show();
 			return;
 		}
 		//Setup listener to use given number
-		String number = setupPhoneNumber.getText().toString();
-		savePhoneNumber(number);
+		String number = phoneField.getText().toString();
+		setDevicePhoneNumber(number);
 		//Change the view to "Please Wait"
 
 		hideRetryButton();
 		setContentView(R.layout.setup_wait_for_response);
 		new Timer().schedule(new ShowRetryButtonTask(), 300000);
 
-		getUserPhoneNumber();
+		queryUserPhoneNumber();
 				
 		sendMessage(createSetupString());	
 		
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		SharedPreferences.Editor editor = settings.edit();
-
-		editor.putInt("state", Constants.SETUP_PHONE_ENTERED);
-		setContentView(R.layout.introduction_hello);
-		editor.commit();	
+		setState(Constants.SETUP_PHONE_ENTERED);	
 	}
 
-	private void getUserPhoneNumber() {
+	private void queryUserPhoneNumber() {
 		TelephonyManager tMgr =(TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 		String number = tMgr.getLine1Number();
 		
 		number = TrackerMessage.FormatPhoneNumber(number);
 		assert number.length() > 0 : "Device phone number query failed.";
 		
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		SharedPreferences.Editor editor = settings.edit();
-
-		editor.putString("user_phone_number", number);
-		editor.commit();
+		setUserPhoneNumber(number);
 	}
 	
 	private String createSetupString() {
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		String number = settings.getString("user_phone_number", "");
+		String number = getUserPhoneNumber();
 		
 		assert number.length() > 0 : "Device phone number not saved in preferences!";		
 		
 		return TrackerMessage.AlarmDestinationNumber(number);
+	}
+	
+	private void enterTestState() {		
+		setContentView(R.layout.setup_test_device);
+	}
+	
+	public void clickedTestCurrentSettings(View view) {
+		hideRetryButton();
+		setContentView(R.layout.setup_wait_for_response);
+		new Timer().schedule(new ShowRetryButtonTask(), 300000);
+		
+		setState(Constants.SETUP_TEST_STARTED);
+		sendMessage(TrackerMessage.WhereAmI());	
+	}
+	
+	private void enterCongratulationsState() {
+		setContentView(R.layout.setup_done);
+	}
+	
+	public void clickedCongratulationsSlide(View view) {
+		setState(Constants.NORMAL);
+		setContentView(R.layout.activity_main);
 	}
 	
 	@Override
@@ -202,28 +285,7 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
-	public void onEnter(View view) {
-		//Switch to other views if setup is completed. This method is triggered by a button.
-		setContentView(R.layout.activity_setup);
-	}
-
-
-
-	public void onSetup(View view) {
-		//Try to reinit the setup.
-		setContentView(R.layout.activity_setup);
-		EditText setupPhoneNumber = (EditText) findViewById(R.id.editSetupPhone);
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0); 
-		String phoneNumber = settings.getString("phoneNumber", "");
-		if (phoneNumber.length() > 0) {
-			setupPhoneNumber.setText(phoneNumber);
-		} else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-			setupPhoneNumber.setHint(getResources().getString(R.string.setup_textfield_default));
-		}
-	}
-
 	public void openSettings(View view) {
-
 		setContentView(R.layout.activity_settings);
 	}
 
@@ -232,6 +294,7 @@ public class MainActivity extends Activity {
 		if (message.matches("^CFG.*")) {
 			//Forward to test view:
 			setContentView(R.layout.setup_test_device);
+			setState(Constants.SETUP_PHONE_CONFIRMED);
 		} else if (message.matches("^INF.*")) {
 			saveBateryState(message);
 			setContentView(R.layout.activity_main);
@@ -264,16 +327,6 @@ public class MainActivity extends Activity {
 	}
 
 
-
-	private String createLocationQueryString() {
-		return "WIM?";
-	}
-
-	public void onTest(View view) {
-		setContentView(R.layout.setup_wait_for_response);
-		sendMessage(createLocationQueryString());		
-	}
-
 	private boolean enteredValidPhoneNumber(EditText text) {
 		return text.getText().length() != 0;
 	}
@@ -296,19 +349,6 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void savePhoneNumber(String number) {
-		Log.i(Constants.LOG, "Saving number: " + number);
-		number.trim().replaceAll("[ -]", "");
-		Log.i(Constants.LOG, "After formatting: " + number);
-
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);    	
-		SharedPreferences.Editor editor = settings.edit();
-
-		editor.putInt("setupState", Constants.SETUP_PHONE_SET);
-		editor.putString("phoneNumber", number);
-
-		editor.commit();
-	}
 
 	public static boolean isActivityVisible() {
 		return activityVisible;

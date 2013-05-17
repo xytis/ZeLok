@@ -21,7 +21,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
         android:contentDescription="@string/test_setup_button_description"
-        android:onClick="onTest"
+        android:onClick="clickedTestCurrentSettings"
         android:text="@string/test_setup_button_name" />
 
 </RelativeLayout>

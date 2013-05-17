@@ -35,10 +35,10 @@ public class TrackerMessage {
 		String result = number;
 		result.trim();	//No spaces
 		result.replaceAll("[ -/*]", ""); //No hyphens, magic symbols or stuff.
-		if (number.matches("^\\+370\\d{8}")) {
+		if (result.matches("^\\+370\\d{8}")) {
 			return result;
 		}
-		if (number.matches("^\\8\\d{8}")) {
+		if (result.matches("^\\8\\d{8}")) {
 			result = "+370" + result.substring(1);
 			return result;
 		}
@@ -89,4 +89,10 @@ public class TrackerMessage {
 	}
 	
 	//CFG_SMS24 not implemented.
+	
+	//Queries:
+	
+	public static String WhereAmI() {
+		return "WIM?";
+	}
 }

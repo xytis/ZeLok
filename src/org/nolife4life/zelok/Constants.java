@@ -11,6 +11,8 @@ public interface Constants {
 	final int SETUP_START = 20;
 	final int SETUP_PHONE_ENTERED = 21;
 	final int SETUP_PHONE_CONFIRMED = 22;
-	final int SETUP_CONFIRMATION_RECEIVED = 24;
+	final int SETUP_TEST_STARTED = 24;
 	final int SETUP_TEST_COMPLETED = 25;
+	
+	final int NORMAL = 50;
 }

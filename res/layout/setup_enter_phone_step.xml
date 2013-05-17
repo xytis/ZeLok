@@ -11,8 +11,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/editSetupPhone"
         android:layout_centerHorizontal="true"
-        android:contentDescription="@string/setup_textfield_description"
-        android:onClick="setupPhoneNumberEntered"
+        android:contentDescription="@string/setup_textfield_default"
+        android:onClick="clickedDevicePhoneEntered"
         android:text="@string/setup_confirm_button" />
 
     <EditText

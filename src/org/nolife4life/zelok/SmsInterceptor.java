@@ -25,7 +25,7 @@ public class SmsInterceptor extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		//Check saved sate:
 		SharedPreferences settings = context.getSharedPreferences(Constants.PREFS_NAME, 0); 
-		boolean setupComplete = settings.getInt("setupState", 0) >= Constants.SETUP_PHONE_SET;
+		boolean setupComplete = settings.getInt("state", 0) >= Constants.SETUP_PHONE_ENTERED;
 		
 		Log.i(Constants.LOG, "Intent received: " + intent.getAction());
 		if (setupComplete && intent.getAction().equals(SMS_RECEIVED)) {
