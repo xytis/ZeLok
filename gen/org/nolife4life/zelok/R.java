@@ -28,15 +28,16 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int action_settings=0x7f090008;
-        public static final int confirmSetupButton=0x7f090002;
-        public static final int editSetupPhone=0x7f090003;
+        public static final int action_settings=0x7f090009;
+        public static final int confirmSetupButton=0x7f090004;
+        public static final int devicePhoneNumberField=0x7f090002;
         public static final int imageButton1=0x7f090001;
-        public static final int imageLogo=0x7f090004;
-        public static final int imageView1=0x7f090005;
-        public static final int retry_button=0x7f090006;
-        public static final int textView1=0x7f090000;
-        public static final int waitingSpinner=0x7f090007;
+        public static final int imageLogo=0x7f090005;
+        public static final int imageView1=0x7f090006;
+        public static final int retry_button=0x7f090007;
+        public static final int userPhoneNumberField=0x7f090003;
+        public static final int userPhoneNumberTitle=0x7f090000;
+        public static final int waitingSpinner=0x7f090008;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
@@ -64,6 +65,8 @@ public final class R {
         public static final int setup_confirm_button=0x7f050004;
         public static final int setup_longwait=0x7f050007;
         public static final int setup_textfield_default=0x7f050006;
+        public static final int setup_user_number_hint=0x7f050010;
+        public static final int setup_zelok_number_hint=0x7f05000f;
         public static final int test_setup_button_description=0x7f05000c;
         public static final int test_setup_button_name=0x7f05000d;
     }

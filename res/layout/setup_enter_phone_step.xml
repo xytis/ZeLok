@@ -5,35 +5,59 @@
     android:background="@color/background_color"
     android:contentDescription="@string/app_name" >
 
-    <Button
-        android:id="@+id/confirmSetupButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/editSetupPhone"
-        android:layout_centerHorizontal="true"
-        android:contentDescription="@string/setup_textfield_default"
-        android:onClick="clickedDevicePhoneEntered"
-        android:text="@string/setup_confirm_button" />
-
     <EditText
-        android:id="@+id/editSetupPhone"
+        android:id="@+id/devicePhoneNumberField"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:ems="10"
         android:gravity="center_vertical|center_horizontal"
-        android:hint="@string/setup_textfield_default"
+        android:hint="@string/setup_zelok_number_hint"
         android:inputType="phone" />
+
+    <EditText
+        android:id="@+id/userPhoneNumberField"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		 android:layout_centerHorizontal="true"
+        android:layout_below="@+id/userPhoneNumberTitle"
+        android:ems="10"
+        android:gravity="center_vertical|center_horizontal"
+        android:hint="@string/setup_user_number_hint"
+        android:inputType="phone" >
+
+        
+    </EditText>
+
+    <Button
+        android:id="@+id/confirmSetupButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/userPhoneNumberField"
+        android:layout_centerHorizontal="true"
+        android:contentDescription="@string/setup_textfield_default"
+        android:onClick="clickedDevicePhoneEntered"
+        android:text="@string/setup_confirm_button" />
 
     <ImageView
         android:id="@+id/imageLogo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/editSetupPhone"
+        android:layout_above="@+id/devicePhoneNumberField"
         android:layout_centerHorizontal="true"
         android:contentDescription="@string/app_name"
         android:scaleType="center"
         android:src="@drawable/ic_launcher" />
+
+    <TextView
+        android:id="@+id/userPhoneNumberTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/devicePhoneNumberField"
+        android:layout_centerHorizontal="true"
+        android:text="Verify Your phone number"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:visibility="gone" />
 
 </RelativeLayout>

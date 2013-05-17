@@ -18,5 +18,7 @@
     <string name="test_setup_button_description">Test your settings</string>
     <string name="test_setup_button_name">Test Me</string>
     <string name="retry">Retry</string>
+    <string name="setup_zelok_number_hint">Enter ZeLok number</string>
+    <string name="setup_user_number_hint">Enter Your phone number</string>
 
 </resources>

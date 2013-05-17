@@ -25,10 +25,10 @@ public class SmsInterceptor extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		//Check saved sate:
 		SharedPreferences settings = context.getSharedPreferences(Constants.PREFS_NAME, 0); 
-		boolean setupComplete = settings.getInt("state", 0) >= Constants.SETUP_PHONE_ENTERED;
+		String devicePhoneNumber = settings.getString("device_phone_number", "");
 		
-		Log.i(Constants.LOG, "Intent received: " + intent.getAction());
-		if (setupComplete && intent.getAction().equals(SMS_RECEIVED)) {
+		Log.d(Constants.LOG, "Intent received: " + intent.getAction());
+		if (devicePhoneNumber.length() > 0 && intent.getAction().equals(SMS_RECEIVED)) {
             Bundle bundle = intent.getExtras();
             if (bundle != null) {
                 Object[] pdus = (Object[])bundle.get("pdus");
@@ -37,11 +37,11 @@ public class SmsInterceptor extends BroadcastReceiver {
                     messages[i] = SmsMessage.createFromPdu((byte[])pdus[i]);
                 }
                 if (messages.length > -1) {
-                	Log.i(Constants.LOG, "Message received: " + messages[0].getMessageBody());
-                    Log.i(Constants.LOG, "From: " + messages[0].getOriginatingAddress());
-                    String phoneNumber = settings.getString("phoneNumber", "");                
-                    if (messages[0].getOriginatingAddress().equals(phoneNumber)) {
-                    	Log.i(Constants.LOG, "This message triggered the Zelok");
+                	Log.d(Constants.LOG, "Message received: " + messages[0].getMessageBody());
+                    Log.d(Constants.LOG, "From: " + messages[0].getOriginatingAddress());
+            
+                    if (messages[0].getOriginatingAddress().equals(devicePhoneNumber)) {
+                    	Log.d(Constants.LOG, "This message triggered the Zelok");
                     	//This line will stop the sms from going to other receivers.
                     	abortBroadcast();
                     	//Either trigger existing activity, either display notification, which will

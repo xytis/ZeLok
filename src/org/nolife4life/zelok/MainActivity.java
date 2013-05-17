@@ -1,19 +1,24 @@
 package org.nolife4life.zelok;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
+import android.text.Editable;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.Menu;
@@ -23,6 +28,8 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
+	private final long WAIT_DELAY = 200000;	//200 s == 3 min 20 s
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -31,6 +38,7 @@ public class MainActivity extends Activity {
 
 		if (BuildConfig.DEBUG) {
 			Log.d(Constants.LOG, "onCreated called");
+			Log.d(Constants.LOG, "State " + getState());
 		}
 
 		setContentView(R.layout.activity_main);
@@ -60,7 +68,7 @@ public class MainActivity extends Activity {
 				//Check for message:
 				parseMessageAndEnterState(bundle.getString("Message"));
 			} else {
-				setContentView(R.layout.setup_wait_for_response);
+				resumeWaitState();
 			}
 			break;
 		}
@@ -74,7 +82,7 @@ public class MainActivity extends Activity {
 				//Check for message:
 				parseMessageAndEnterState(bundle.getString("Message"));
 			} else {
-				setContentView(R.layout.setup_wait_for_response);
+				resumeWaitState();
 			}
 			break;
 		}
@@ -104,7 +112,7 @@ public class MainActivity extends Activity {
 		SharedPreferences.Editor editor = settings.edit();
 
 		editor.putInt("last_state", settings.getInt("state", 0));
-		editor.putInt("state", Constants.INTRODUCTION_STATE);
+		editor.putInt("state", state);
 		editor.commit();
 	}
 	
@@ -120,7 +128,15 @@ public class MainActivity extends Activity {
 	
 	private String getUserPhoneNumber() {
 		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);   
-		return settings.getString("user_phone_number", "");
+		String phone = settings.getString("user_phone_number", "");
+		
+		if (phone.length() == 0) {
+			TelephonyManager tMgr =(TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+			phone = tMgr.getLine1Number();
+			phone = TrackerMessage.FormatPhoneNumber(phone);
+		}
+		
+		return phone;
 	}
 	
 	private void setDevicePhoneNumber(String number) {
@@ -150,31 +166,83 @@ public class MainActivity extends Activity {
 
 	private void enterSetupState() {
 		setState(Constants.SETUP_START);
-		//Try to get any saved device number:
-		String number = getDevicePhoneNumber();
-		if (number.length() > 0) {
-			//Place this number instead of hint.
-			EditText phoneField = (EditText) findViewById(R.id.editSetupPhone);
-			phoneField.setText(number);
-		}
 		
 		setContentView(R.layout.setup_enter_phone_step);
+		
+		//Try to get any saved device number:
+		String device_number = getDevicePhoneNumber();
+		if (device_number.length() > 0) {
+			//Place this number instead of hint.
+			EditText phoneField = (EditText) findViewById(R.id.devicePhoneNumberField);
+			phoneField.setText(device_number);
+		}
+		
+		//Try to get user phone number
+		String user_number = getUserPhoneNumber();
+		if (user_number.length() > 0) {
+			EditText phoneField = (EditText) findViewById(R.id.userPhoneNumberField);
+			phoneField.setText(user_number);
+			View title = findViewById(R.id.userPhoneNumberTitle);
+			title.setVisibility(View.VISIBLE);
+		} else {
+			View title = findViewById(R.id.userPhoneNumberTitle);
+			title.setVisibility(View.GONE);
+		}
 	}
 
-	//Hides retry button.
-	class ShowRetryButtonTask extends TimerTask {
-		@Override
-		public void run() {
-			showRetryButton();
-		}
-	};
+	private Handler wait_handler = new Handler();
+    Runnable wait_runnable = new Runnable() {
+    	@Override
+        public void run() {
+        	showRetryButton();
+        }
+    };
+	
+    private void resumeWaitState() {
+		setContentView(R.layout.setup_wait_for_response);
+		hideRetryButton();
+		wait_handler.postDelayed(wait_runnable, getWaitDelay());
+    }
+    
+	private void enterWaitState() {
+		setWaitDelay(WAIT_DELAY);
+		resumeWaitState();
+	}
+	
+	private void setWaitDelay(long seconds) {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
+		SharedPreferences.Editor editor = settings.edit();
 
+		editor.putLong("wait_start", new Date().getTime());
+		editor.putLong("wait_delay", seconds);
+		editor.commit();
+	}
+	
+	private long getWaitDelay() {
+		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
+		
+		long wait_start = settings.getLong("wait_start", 0);
+		long wait_delay = settings.getLong("wait_delay", 0);
+		long now = new Date().getTime();
+		long delay_left = wait_start + wait_delay - now;
+		if (delay_left < 0) {
+			delay_left = 0;
+		}
+		return delay_left;
+	}
+	
 	private void showRetryButton() {
-		findViewById(R.id.retry_button).setVisibility(View.VISIBLE);
+		View view = findViewById(R.id.retry_button);
+		if (view != null) {
+			view.setVisibility(View.VISIBLE);
+		}
 	}
 
 	private void hideRetryButton() {
-		findViewById(R.id.retry_button).setVisibility(View.GONE);
+		View view = findViewById(R.id.retry_button);
+		if (view != null) {
+			view.setVisibility(View.GONE);
+		}
 	}
 	
 	public void retryLastAction(View view) {
@@ -191,37 +259,34 @@ public class MainActivity extends Activity {
 	}
 
 	public void clickedDevicePhoneEntered(View view) {
-		EditText phoneField = (EditText) findViewById(R.id.editSetupPhone);
+		EditText devicePhoneField = (EditText) findViewById(R.id.devicePhoneNumberField);
 		//Check for valid phone number:
-		if (!enteredValidPhoneNumber(phoneField)) {
+		if (!enteredValidPhoneNumber(devicePhoneField)) {
 			Toast.makeText(this, "Please enter a valid number",
 					Toast.LENGTH_LONG).show();
+			devicePhoneField.requestFocus();
 			return;
 		}
+		
+		EditText userPhoneField = (EditText) findViewById(R.id.userPhoneNumberField);
+		//Check for valid phone number:
+		if (!enteredValidPhoneNumber(userPhoneField)) {
+			Toast.makeText(this, "Please enter a valid number",
+					Toast.LENGTH_LONG).show();
+			userPhoneField.requestFocus();
+			return;
+		}		
+		
 		//Setup listener to use given number
-		String number = phoneField.getText().toString();
-		setDevicePhoneNumber(number);
+		setDevicePhoneNumber(devicePhoneField.getText().toString());
+		setUserPhoneNumber(userPhoneField.getText().toString());
 		//Change the view to "Please Wait"
 
-		hideRetryButton();
-		setContentView(R.layout.setup_wait_for_response);
-		new Timer().schedule(new ShowRetryButtonTask(), 300000);
-
-		queryUserPhoneNumber();
-				
+		enterWaitState();
+		
 		sendMessage(createSetupString());	
 		
-		setState(Constants.SETUP_PHONE_ENTERED);	
-	}
-
-	private void queryUserPhoneNumber() {
-		TelephonyManager tMgr =(TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-		String number = tMgr.getLine1Number();
-		
-		number = TrackerMessage.FormatPhoneNumber(number);
-		assert number.length() > 0 : "Device phone number query failed.";
-		
-		setUserPhoneNumber(number);
+		setState(Constants.SETUP_PHONE_ENTERED);
 	}
 	
 	private String createSetupString() {
@@ -237,9 +302,8 @@ public class MainActivity extends Activity {
 	}
 	
 	public void clickedTestCurrentSettings(View view) {
-		hideRetryButton();
-		setContentView(R.layout.setup_wait_for_response);
-		new Timer().schedule(new ShowRetryButtonTask(), 300000);
+		
+		enterWaitState();
 		
 		setState(Constants.SETUP_TEST_STARTED);
 		sendMessage(TrackerMessage.WhereAmI());	
@@ -281,7 +345,7 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
+		//getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 
@@ -293,7 +357,7 @@ public class MainActivity extends Activity {
 		//Check for config header:
 		if (message.matches("^CFG.*")) {
 			//Forward to test view:
-			setContentView(R.layout.setup_test_device);
+			enterTestState();
 			setState(Constants.SETUP_PHONE_CONFIRMED);
 		} else if (message.matches("^INF.*")) {
 			saveBateryState(message);
@@ -319,11 +383,7 @@ public class MainActivity extends Activity {
 	private void sendMessage(String message) {
 		//Send setup message
 		SmsManager sm = SmsManager.getDefault();
-
-		SharedPreferences settings = getSharedPreferences(Constants.PREFS_NAME, 0);
-		String phoneNumber = settings.getString("phoneNumber", "");
-
-		sm.sendTextMessage(phoneNumber, null, message, null, null);				
+		sm.sendTextMessage(getDevicePhoneNumber(), null, message, null, null);		
 	}
 
 

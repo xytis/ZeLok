@@ -32,6 +32,7 @@ public class TrackerMessage {
 	 * @return formated number. On error returns empty string.
 	 */
 	public static String FormatPhoneNumber(String number) {
+		if (number.length() == 0) { return number; }
 		String result = number;
 		result.trim();	//No spaces
 		result.replaceAll("[ -/*]", ""); //No hyphens, magic symbols or stuff.
